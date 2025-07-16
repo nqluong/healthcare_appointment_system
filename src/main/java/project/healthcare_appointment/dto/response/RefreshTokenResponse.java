@@ -18,6 +18,10 @@ public class RefreshTokenResponse {
     @NotBlank(message = "Refresh token is required")
     String accessToken;
 
+    @Schema(description = "New refresh token", example = "eyJhbGciOiJIUzUxMiJ9...")
+    @NotBlank(message = "Refresh token is required")
+    String refreshToken;
+
     @Schema(description = "Token type", example = "Bearer")
     String tokenType = "Bearer";
 }

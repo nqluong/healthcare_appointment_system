@@ -7,15 +7,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import project.healthcare_appointment.dto.request.LoginRequest;
-import project.healthcare_appointment.dto.request.RefreshTokenRequest;
-import project.healthcare_appointment.dto.request.RegisterRequest;
+import project.healthcare_appointment.dto.request.auth_request.*;
 import project.healthcare_appointment.dto.response.*;
+import project.healthcare_appointment.exception.AppException;
+import project.healthcare_appointment.exception.ErrorCode;
 import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.service.AuthService;
 
@@ -24,7 +26,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "Authentication and authorization endpoints")
-@SecurityRequirement(name = "bearerAuth")
 public class AuthController {
     @Autowired
     private AuthService authService;
@@ -67,9 +68,49 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Invalid refresh token",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<RefreshTokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
-        RefreshTokenResponse response = authService.refreshToken(request);
+    public ResponseEntity<RefreshTokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request,
+                                                             HttpServletRequest httpRequest) {
+        RefreshTokenResponse response = authService.refreshToken(request, httpRequest);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "User logout", description = "Logout user and blacklist current token",
+    security = @SecurityRequirement(name = "bearer-jwt"))
+    public ResponseEntity<LogoutResponse> logout(@RequestBody LogoutRequest request,
+                                                      HttpServletRequest httpRequest) {
+        try {
+            authService.logout(request.getToken(), httpRequest);
+            return ResponseEntity.ok(LogoutResponse.builder()
+                    .message("Logged out successfully")
+                    .success(true)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(LogoutResponse.builder()
+                            .message("Logout failed")
+                            .success(false)
+                            .build());
+        }
+    }
+
+    @PostMapping("/logout-all")
+    @Operation(summary = "Logout all devices", description = "Logout user from all devices")
+    public ResponseEntity<LogoutResponse> logoutAllDevices(@RequestBody LogoutRequest request,
+                                                                HttpServletRequest httpRequest) {
+        try {
+            authService.logoutAllDevices(request.getToken(), httpRequest);
+            return ResponseEntity.ok(LogoutResponse.builder()
+                    .message("Logged out from all devices successfully")
+                    .success(true)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(LogoutResponse.builder()
+                            .message("Logout all devices failed")
+                            .success(false)
+                            .build());
+        }
     }
 
     @PostMapping("/verify")
@@ -80,21 +121,9 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Invalid token",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Map<String, Boolean>> verifyToken(@RequestParam String token) {
-        boolean isValid = authService.verifyToken(token);
+    public ResponseEntity<Map<String, Boolean>> verifyToken(@RequestBody VerifyTokenRequest request) {
+        boolean isValid = authService.verifyToken(request.getToken());
         return ResponseEntity.ok(Map.of("valid", isValid));
     }
 
-    @GetMapping("/me")
-    @Operation(summary = "Get current user", description = "Get current authenticated user information")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User information retrieved",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Unauthorized",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(user);
-    }
 }

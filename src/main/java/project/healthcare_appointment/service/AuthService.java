@@ -1,5 +1,7 @@
 package project.healthcare_appointment.service;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -8,9 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import project.healthcare_appointment.exception.*;
 import project.healthcare_appointment.security.JwtUtil;
-import project.healthcare_appointment.dto.request.LoginRequest;
-import project.healthcare_appointment.dto.request.RefreshTokenRequest;
-import project.healthcare_appointment.dto.request.RegisterRequest;
+import project.healthcare_appointment.dto.request.auth_request.LoginRequest;
+import project.healthcare_appointment.dto.request.auth_request.RefreshTokenRequest;
+import project.healthcare_appointment.dto.request.auth_request.RegisterRequest;
 import project.healthcare_appointment.dto.response.LoginResponse;
 import project.healthcare_appointment.dto.response.RefreshTokenResponse;
 import project.healthcare_appointment.dto.response.RegisterResponse;
@@ -19,6 +21,8 @@ import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.model.UserProfile;
 import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.repository.UserRepository;
+
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -32,30 +36,25 @@ public class AuthService {
 
     PasswordEncoder passwordEncoder;
 
+    InvalidatedTokenService invalidatedTokenService;
+
     JwtUtil jwtUtil;
 
     // Login
     public LoginResponse login(LoginRequest request) {
        try{
            User user = userRepository.findByUsername(request.getUsername())
-                   .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND,
-                           "User not found with username: " + request.getUsername()));
+                   .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-               throw AppException.builder(ErrorCode.INVALID_CREDENTIALS)
-                       .property("username", request.getUsername())
-                       .build();
+               throw new AppException(ErrorCode.INVALID_CREDENTIALS);
            }
 
            if (!user.getIsActive()) {
-               throw AppException.builder(ErrorCode.ACCOUNT_INACTIVE)
-                       .property("username", request.getUsername())
-                       .build();
+               throw new AppException(ErrorCode.ACCOUNT_INACTIVE);
            }
            if (!user.getIsEmailVerified()) {
-               throw AppException.builder(ErrorCode.EMAIL_NOT_VERIFIED)
-                       .property("email", user.getEmail())
-                       .build();
+               throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
            }
 
            String accessToken = jwtUtil.generateToken(user);
@@ -83,17 +82,11 @@ public class AuthService {
     public RegisterResponse register(RegisterRequest request) {
         try {
             if (userRepository.existsByUsername(request.getUsername())) {
-                throw AppException.builder(ErrorCode.USERNAME_TAKEN)
-                        .property("field", "username")
-                        .property("value", request.getUsername())
-                        .build();
+                throw new AppException(ErrorCode.USERNAME_TAKEN);
             }
 
             if (userRepository.existsByEmail(request.getEmail())) {
-                throw AppException.builder(ErrorCode.EMAIL_TAKEN)
-                        .property("field", "email")
-                        .property("value", request.getEmail())
-                        .build();
+                throw new AppException(ErrorCode.EMAIL_TAKEN);
             }
 
             User user = User.builder()
@@ -124,28 +117,90 @@ public class AuthService {
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error during registration for user: {}", request.getUsername(), e);
+            log.error("Error during registration for user: {}", request.getUsername());
             throw new AppException(ErrorCode.INTERNAL_ERROR, "Registration failed", e);
         }
     }
 
     // Refresh Token
-    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        try{
-            String newAccessToken = jwtUtil.refreshToken(request.getRefreshToken());
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request, HttpServletRequest httpRequest) {
+        try {
+            String ipAddress = getClientIp(httpRequest);
+            String userAgent = httpRequest.getHeader("User-Agent");
+
+            if (!jwtUtil.verifyToken(request.getRefreshToken())) {
+                throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+            }
+
+            String username = jwtUtil.getUsernameFromToken(request.getRefreshToken());
+            UUID userId = jwtUtil.getUserIdFromToken(request.getRefreshToken());
+            String role = jwtUtil.getRoleFromToken(request.getRefreshToken());
+
+            // Find user to generate new tokens
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            jwtUtil.blacklistToken(request.getRefreshToken(), userId, "REFRESH", ipAddress, userAgent);
+
+            String newAccessToken = jwtUtil.generateToken(user);
+            String newRefreshToken = jwtUtil.generateRefreshToken(user);
+
             return RefreshTokenResponse.builder()
                     .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken)
                     .build();
-        }catch (AppException e) {
+        } catch (AppException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error refreshing token", e);
+            log.error("Error refreshing token");
             throw new AppException(ErrorCode.TOKEN_REFRESH_ERROR, e);
+        }
+    }
+
+    @Transactional
+    public void logout(String token, HttpServletRequest httpRequest) {
+        try {
+            UUID userId = jwtUtil.getUserIdFromToken(token);
+            String ipAddress = getClientIp(httpRequest);
+            String userAgent = httpRequest.getHeader("User-Agent");
+
+            jwtUtil.blacklistToken(token, userId, "LOGOUT", ipAddress, userAgent);
+            log.info("User {} logged out successfully", userId);
+        } catch (Exception e) {
+            log.error("Error during logout: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.INTERNAL_ERROR, "Logout failed", e);
+        }
+    }
+
+    @Transactional
+    public void logoutAllDevices(String token, HttpServletRequest httpRequest) {
+        try {
+            String ipAddress = getClientIp(httpRequest);
+            UUID userId = jwtUtil.getUserIdFromToken(token);
+            invalidatedTokenService.invalidateAllUserTokens(userId, "LOGOUT_ALL_DEVICES");
+            log.info("All devices logged out for user {} from IP: {}", userId, ipAddress);
+        } catch (Exception e) {
+            log.error("Error during logout all devices: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.INTERNAL_ERROR, "Logout all devices failed", e);
         }
     }
 
     // Verify Token
     public boolean verifyToken(String token) {
         return jwtUtil.verifyToken(token);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+
+        return request.getRemoteAddr();
     }
 }

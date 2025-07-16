@@ -48,7 +48,6 @@ public class ErrorResponse {
                 .message(ex.getMessage())
                 .errorCode(ex.getErrorCode().getCode())
                 .data(ex.getData())
-               // .properties(ex.getProperties())
                 .timestamp(LocalDateTime.now().toString())
                 .path(path)
                 .build();

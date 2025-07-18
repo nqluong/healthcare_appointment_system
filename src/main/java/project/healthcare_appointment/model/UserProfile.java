@@ -1,6 +1,6 @@
 package project.healthcare_appointment.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -22,6 +22,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "user_profiles")
+@ToString(onlyExplicitlyIncluded = true)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfile {
     
@@ -65,7 +67,7 @@ public class UserProfile {
     
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    @JsonIgnore
+    @JsonIgnoreProperties({"userProfile", "doctor", "patient", "notifications", "passwordResetTokens", "auditLogs", "hibernateLazyInitializer", "handler"})
     User user;
 
 }

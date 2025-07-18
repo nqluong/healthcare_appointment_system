@@ -1,12 +1,17 @@
 package project.healthcare_appointment.security;
 
-import io.jsonwebtoken.*;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import project.healthcare_appointment.enums.TokenType;
 import project.healthcare_appointment.exception.AppException;
@@ -14,6 +19,7 @@ import project.healthcare_appointment.exception.ErrorCode;
 import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.service.InvalidatedTokenService;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -58,164 +64,147 @@ public class JwtUtil {
         }
     }
 
-    // Create Token with custom expiration
     private String createToken(User user, Long expiration) {
-        Date now = new Date();
-        Date expiryDate = new Date(Instant.now().plus(expiration, ChronoUnit.SECONDS).toEpochMilli());
+        try {
+            JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .claim("userId", user.getId().toString())
-                .claim("email", user.getEmail())
-                .claim("role", user.getRole().name())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-                .compact();
+            JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                    .subject(user.getUsername())
+                    .issuer("healthcare-appointment")
+                    .issueTime(new Date())
+                    .expirationTime(new Date(
+                            Instant.now().plus(expiration, ChronoUnit.SECONDS).toEpochMilli()
+                    ))
+                    .jwtID(UUID.randomUUID().toString())
+                    .claim("userId", user.getId().toString())
+                    .claim("role", user.getRole().name().toUpperCase())
+                    .claim("email", user.getEmail())
+                    .claim("isActive", user.getIsActive())
+                    .build();
+
+            Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+            JWSObject jwsObject = new JWSObject(header, payload);
+            jwsObject.sign(new MACSigner(jwtSecret.getBytes()));
+
+            return jwsObject.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error generating token", e);
+        }
     }
 
-    // Verify Token
     public boolean verifyToken(String token) {
         try {
-            if (token == null || token.trim().isEmpty()) {
-                log.warn("Token is null or empty");
-                return false;
-            }
-            if(invalidatedTokenService.isTokenInvalidated(token)) {
-                log.warn("Token is blacklisted");
-                return false;
-            }
-            Claims claims = Jwts.parser()
-                    .setSigningKey(jwtSecret)
-                    .parseClaimsJws(token)
-                    .getBody();
-
-            if (claims.getSubject() == null || claims.getSubject().isEmpty()) {
-                log.warn("Token missing subject claim");
-                return false;
-            }
-
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+            verifyTokenInternal(token, false);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
+            log.debug("Token verification failed: {}", e.getMessage());
             return false;
         }
     }
 
-    // Get Username from Token
+    private SignedJWT verifyTokenInternal(String token, boolean isRefresh) throws JOSEException, ParseException {
+
+        if (invalidatedTokenService.isTokenInvalidated(token)) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        JWSVerifier verifier = new MACVerifier(jwtSecret.getBytes());
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        String userIdStr = signedJWT.getJWTClaimsSet().getStringClaim("userId");
+        if (userIdStr != null) {
+            UUID userId = UUID.fromString(userIdStr);
+            if (invalidatedTokenService.isAllUserTokensInvalidated(userId)) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+        }
+
+        Date expiryTime = (isRefresh)
+                ? new Date(signedJWT
+                .getJWTClaimsSet()
+                .getIssueTime()
+                .toInstant()
+                .plus(refreshExpiration, ChronoUnit.SECONDS)
+                .toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        boolean verified = signedJWT.verify(verifier);
+        if (!(verified && expiryTime.after(new Date()))) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        return signedJWT;
+    }
+
     public String getUsernameFromToken(String token) {
         try {
-            Claims claims = getClaimsFromToken(token);
-            return claims.getSubject();
-        } catch (Exception e) {
-            log.error("Error extracting username from token", e);
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getSubject();
+        } catch (ParseException e) {
+            log.error("Error parsing token to get username", e);
             throw new AppException(ErrorCode.TOKEN_PARSE_ERROR, e);
         }
     }
 
     public UUID getUserIdFromToken(String token) {
         try {
-            Claims claims = getClaimsFromToken(token);
-            return UUID.fromString(claims.get("userId", String.class));
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error extracting user ID from token", e);
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            String userIdStr = signedJWT.getJWTClaimsSet().getStringClaim("userId");
+            return UUID.fromString(userIdStr);
+        } catch (ParseException e) {
+            log.error("Error parsing token to get user ID", e);
             throw new AppException(ErrorCode.TOKEN_PARSE_ERROR, e);
         }
     }
 
     public String getRoleFromToken(String token) {
         try {
-            Claims claims = getClaimsFromToken(token);
-            return claims.get("role", String.class);
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error extracting role from token", e);
-            throw new AppException(ErrorCode.TOKEN_PARSE_ERROR, e);
-        }
-
-    }
-    public LocalDateTime getExpirationFromToken(String token) {
-        try {
-            Claims claims = getClaimsFromToken(token);
-            return claims.getExpiration().toInstant()
-                    .atZone(systemDefault())
-                    .toLocalDateTime();
-        } catch (Exception e) {
-            log.error("Error extracting expiration from token", e);
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getStringClaim("role");
+        } catch (ParseException e) {
+            log.error("Error parsing token to get role", e);
             throw new AppException(ErrorCode.TOKEN_PARSE_ERROR, e);
         }
     }
 
-    private Claims getClaimsFromToken(String token) {
-        try {
-            return Jwts.parser()
-                    .setSigningKey(jwtSecret)
-                    .parseClaimsJws(token)
-                    .getBody();
-        } catch (ExpiredJwtException e) {
-            throw new AppException(ErrorCode.TOKEN_EXPIRED);
-        } catch (UnsupportedJwtException e) {
-            throw new AppException(ErrorCode.TOKEN_UNSUPPORTED);
-        } catch (MalformedJwtException e) {
-            throw new AppException(ErrorCode.TOKEN_MALFORMED);
-        } catch (SignatureException e) {
-            throw new AppException(ErrorCode.TOKEN_SIGNATURE_INVALID);
-        } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.TOKEN_CLAIMS_EMPTY);
+    public Date getExpiresAtFromJwt(String token) {
+        try{
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getExpirationTime();
+        }catch (ParseException e){
+            log.error("Error parsing token to get expiration time", e);
+            throw new AppException(ErrorCode.TOKEN_PARSE_ERROR, e);
         }
     }
 
-//    public String refreshToken(String refreshToken, String ipAddress, String userAgent) {
-//        try {
-//            if (verifyToken(refreshToken)) {
-//                String username = getUsernameFromToken(refreshToken);
-//                UUID userId = getUserIdFromToken(refreshToken);
-//                String role = getRoleFromToken(refreshToken);
-//                LocalDateTime oldTokenExpiration = getExpirationFromToken(refreshToken);
-//
-//                invalidatedTokenService.invalidateToken(
-//                        refreshToken,
-//                        userId,
-//                        TokenType.REFRESH_TOKEN,
-//                        oldTokenExpiration,
-//                        "REFRESH",
-//                        ipAddress,
-//                        userAgent
-//                );
-//
-//                Date now = new Date();
-//                Date expiryDate = new Date(Instant.now().plus(jwtExpiration, ChronoUnit.SECONDS).toEpochMilli());
-//
-//                return Jwts.builder()
-//                        .setSubject(username)
-//                        .claim("userId", userId.toString())
-//                        .claim("role", role)
-//                        .setIssuedAt(now)
-//                        .setExpiration(expiryDate)
-//                        .signWith(SignatureAlgorithm.HS512, jwtSecret)
-//                        .compact();
-//            }
-//        } catch (AppException e) {
-//            throw e;
-//        } catch (Exception e) {
-//            log.error("Error refreshing token", e);
-//            throw new AppException(ErrorCode.TOKEN_REFRESH_ERROR, e);
-//        }
-//        throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
-//    }
+    public String getUsernameFromJwt(Jwt jwt) {
+        return jwt.getSubject();
+    }
+
+    public UUID getUserIdFromJwt(Jwt jwt) {
+        String userIdStr = jwt.getClaimAsString("userId");
+        return UUID.fromString(userIdStr);
+    }
+
+    public String getRoleFromJwt(Jwt jwt) {
+        return jwt.getClaimAsString("role");
+    }
+
+    public String getEmailFromJwt(Jwt jwt) {
+        return jwt.getClaimAsString("email");
+    }
+
+    public Boolean getIsActiveFromJwt(Jwt jwt) {
+        return jwt.getClaimAsBoolean("isActive");
+    }
+
 
     public void blacklistToken(String token, UUID userId, String reason, String ipAddress, String userAgent) {
         try {
-            LocalDateTime expiration = getExpirationFromToken(token);
-            TokenType tokenType = token.length() > 200 ?
-                    TokenType.REFRESH_TOKEN : TokenType.ACCESS_TOKEN;
-
-            invalidatedTokenService.invalidateToken(token, userId, tokenType, expiration, reason, ipAddress, userAgent);
+            invalidatedTokenService.invalidateToken(token, userId,reason, ipAddress, userAgent);
+            log.info("Token blacklisted for user: {} with reason: {}", userId, reason);
         } catch (Exception e) {
-            log.error("Error blacklisting token: {}", e.getMessage(), e);
+            log.error("Error blacklisting token for user: {}", userId, e);
+            throw new AppException(ErrorCode.INTERNAL_ERROR, "Failed to blacklist token", e);
         }
     }
 }

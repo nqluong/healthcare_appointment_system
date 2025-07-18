@@ -11,6 +11,7 @@ public enum ErrorCode {
     ACCOUNT_LOCKED("AUTH003", "Account is locked", HttpStatus.LOCKED),
     EMAIL_NOT_VERIFIED("AUTH004", "Email is not verified", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED("AUTH005","You must be logged in to logout" ,HttpStatus.UNAUTHORIZED ),
+    UNAUTHENTICATED("AUTH006","Authentication required", HttpStatus.UNAUTHORIZED),
 
     // JWT Token Errors
     TOKEN_EXPIRED("JWT001", "Token has expired", HttpStatus.UNAUTHORIZED),

@@ -69,7 +69,6 @@ public class GlobalExceptionHandler {
         String message = "Data integrity violation";
         ErrorCode errorCode = ErrorCode.DATABASE_ERROR;
 
-        // Check for specific constraint violations
         if (ex.getMessage().contains("username")) {
             errorCode = ErrorCode.USERNAME_TAKEN;
             message = "Username is already taken";

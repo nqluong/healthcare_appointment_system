@@ -1,5 +1,7 @@
 package project.healthcare_appointment.service;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +16,9 @@ import project.healthcare_appointment.repository.InvalidatedTokenRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +30,25 @@ public class InvalidatedTokenService {
 
     InvalidatedTokenRepository invalidatedTokenRepository;
 
+    public void invalidateToken(String token, UUID userId, String reason, String ipAddress, String userAgent) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+
+            LocalDateTime expiresAt = claims.getExpirationTime()
+                    .toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+            TokenType tokenType = determineTokenType(reason, claims);
+
+            invalidateToken(token, userId, tokenType, expiresAt, reason, ipAddress, userAgent);
+        } catch (ParseException e) {
+            log.error("Error parsing token for invalidation: {}", e.getMessage());
+            LocalDateTime defaultExpiration = LocalDateTime.now().plusHours(1);
+            invalidateToken(token, userId, TokenType.ACCESS_TOKEN, defaultExpiration, reason, ipAddress, userAgent);
+        }
+    }
     public void invalidateToken(String token, UUID userId, TokenType tokenType,
                                 LocalDateTime expiresAt, String reason, String ipAddress, String userAgent) {
         try {
@@ -61,10 +84,31 @@ public class InvalidatedTokenService {
     @Transactional
     public void invalidateAllUserTokens(UUID userId, String reason) {
         try {
-            invalidatedTokenRepository.deleteAllByUserId(userId);
-            log.info("All tokens blacklisted for user {} with reason: {}", userId, reason);
+            InvalidatedToken invalidateAllToken = InvalidatedToken.builder()
+                    .tokenHash("ALL_TOKENS_" + userId.toString())
+                    .userId(userId)
+                    .tokenType(TokenType.ACCESS_TOKEN)
+                    .expiresAt(LocalDateTime.now().plusDays(30))
+                    .reason(reason)
+                    .ipAddress("SYSTEM")
+                    .userAgent("SYSTEM")
+                    .build();
+
+            invalidatedTokenRepository.save(invalidateAllToken);
+            log.info("All tokens invalidated for user {} with reason: {}", userId, reason);
         } catch (Exception e) {
-            log.error("Error blacklisting all tokens for user {}: {}", userId, e.getMessage());
+            log.error("Error invalidating all tokens for user {}: {}", userId, e.getMessage());
+            throw new RuntimeException("Failed to invalidate all user tokens", e);
+        }
+    }
+
+    public boolean isAllUserTokensInvalidated(UUID userId) {
+        try {
+            String allTokensHash = "ALL_TOKENS_" + userId.toString();
+            return invalidatedTokenRepository.existsByTokenHash(allTokensHash);
+        } catch (Exception e) {
+            log.error("Error checking if all user tokens are invalidated: {}", e.getMessage());
+            return false;
         }
     }
 
@@ -82,6 +126,22 @@ public class InvalidatedTokenService {
         } catch (Exception e) {
             log.error("Error cleaning up expired tokens: {}", e.getMessage());
         }
+    }
+
+    private TokenType determineTokenType(String reason, JWTClaimsSet claims) {
+        if (reason.contains("REFRESH")) {
+            return TokenType.REFRESH_TOKEN;
+        }
+
+        long expirationTime = claims.getExpirationTime().getTime();
+        long issueTime = claims.getIssueTime().getTime();
+        long tokenLifetime = expirationTime - issueTime;
+
+        if (tokenLifetime > 3600000) {
+            return TokenType.REFRESH_TOKEN;
+        }
+
+        return TokenType.ACCESS_TOKEN;
     }
 
     public long getActiveBlacklistedTokensCount() {

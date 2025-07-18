@@ -6,13 +6,15 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import project.healthcare_appointment.dto.request.auth_request.*;
+import project.healthcare_appointment.enums.TokenType;
 import project.healthcare_appointment.exception.*;
 import project.healthcare_appointment.security.JwtUtil;
-import project.healthcare_appointment.dto.request.auth_request.LoginRequest;
-import project.healthcare_appointment.dto.request.auth_request.RefreshTokenRequest;
-import project.healthcare_appointment.dto.request.auth_request.RegisterRequest;
 import project.healthcare_appointment.dto.response.LoginResponse;
 import project.healthcare_appointment.dto.response.RefreshTokenResponse;
 import project.healthcare_appointment.dto.response.RegisterResponse;
@@ -22,6 +24,9 @@ import project.healthcare_appointment.model.UserProfile;
 import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.repository.UserRepository;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -43,9 +48,10 @@ public class AuthService {
     // Login
     public LoginResponse login(LoginRequest request) {
        try{
-           User user = userRepository.findByUsername(request.getUsername())
+           log.info("Thuc hien truy van ơ auth");
+           User user = userRepository.findUserWithoutRelationships(request.getUsername())
                    .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-
+            log.info("THuc hien truy van thanh cong ơ auth {}", user);
            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
                throw new AppException(ErrorCode.INVALID_CREDENTIALS);
            }
@@ -67,8 +73,8 @@ public class AuthService {
                    .email(user.getEmail())
                    .username(user.getUsername())
                    .role(user.getRole().name())
-                   .firstName(user.getUserProfile() != null ? user.getUserProfile().getFirstName() : "")
-                   .lastName(user.getUserProfile() != null ? user.getUserProfile().getLastName() : "")
+//                   .firstName(user.getUserProfile() != null ? user.getUserProfile().getFirstName() : "")
+//                   .lastName(user.getUserProfile() != null ? user.getUserProfile().getLastName() : "")
                    .build();
        }catch  (AppException e) {
             throw e;
@@ -132,15 +138,12 @@ public class AuthService {
                 throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
             }
 
-            String username = jwtUtil.getUsernameFromToken(request.getRefreshToken());
             UUID userId = jwtUtil.getUserIdFromToken(request.getRefreshToken());
-            String role = jwtUtil.getRoleFromToken(request.getRefreshToken());
-
             // Find user to generate new tokens
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-            jwtUtil.blacklistToken(request.getRefreshToken(), userId, "REFRESH", ipAddress, userAgent);
+            jwtUtil.blacklistToken(request.getRefreshToken(), userId, "REFRESH" ,ipAddress, userAgent);
 
             String newAccessToken = jwtUtil.generateToken(user);
             String newRefreshToken = jwtUtil.generateRefreshToken(user);
@@ -158,9 +161,11 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String token, HttpServletRequest httpRequest) {
+    public void logout(Authentication authentication, HttpServletRequest httpRequest) {
         try {
-            UUID userId = jwtUtil.getUserIdFromToken(token);
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            String token = jwt.getTokenValue();
+            UUID userId = jwtUtil.getUserIdFromJwt(jwt);
             String ipAddress = getClientIp(httpRequest);
             String userAgent = httpRequest.getHeader("User-Agent");
 
@@ -173,10 +178,11 @@ public class AuthService {
     }
 
     @Transactional
-    public void logoutAllDevices(String token, HttpServletRequest httpRequest) {
+    public void logoutAllDevices(Authentication authentication, HttpServletRequest httpRequest) {
         try {
+            Jwt jwt = (Jwt) authentication.getPrincipal();
             String ipAddress = getClientIp(httpRequest);
-            UUID userId = jwtUtil.getUserIdFromToken(token);
+            UUID userId = jwtUtil.getUserIdFromJwt(jwt);
             invalidatedTokenService.invalidateAllUserTokens(userId, "LOGOUT_ALL_DEVICES");
             log.info("All devices logged out for user {} from IP: {}", userId, ipAddress);
         } catch (Exception e) {
@@ -184,6 +190,60 @@ public class AuthService {
             throw new AppException(ErrorCode.INTERNAL_ERROR, "Logout all devices failed", e);
         }
     }
+
+    @Transactional
+    public void changePassword(ChangePasswordRequest request, HttpServletRequest httpRequest, Authentication authentication) {
+        try{
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            String currentToken = jwt.getTokenValue();
+            UUID userId = jwtUtil.getUserIdFromJwt(jwt);
+            String username = jwtUtil.getUsernameFromJwt(jwt);
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+                throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Current password is incorrect");
+            }
+
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+            String ipAddress = getClientIp(httpRequest);
+            String userAgent = httpRequest.getHeader("User-Agent");
+            jwtUtil.blacklistToken(currentToken, userId, "PASSWORD_CHANGE", ipAddress, userAgent);
+
+//            invalidatedTokenService.invalidateAllUserTokens(userId, "PASSWORD_CHANGE");
+
+            log.info("Password changed successfully for user: {}", username);
+        }catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error changing password: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.INTERNAL_ERROR, "Password change failed");
+        }
+    }
+
+//    @Transactional
+//    public void forgotPassword(ForgotPasswordRequest request, HttpServletRequest httpRequest) {
+//        try {
+//            User user = userRepository.findByEmail(request.getEmail())
+//                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+//
+//            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+//            userRepository.save(user);
+//
+//            invalidatedTokenService.invalidateAllUserTokens(user.getId(), "PASSWORD_RESET");
+//
+//            String ipAddress = getClientIp(httpRequest);
+//            log.info("Password reset successfully for user with email: {} from IP: {}",
+//                    request.getEmail(), ipAddress);
+//        } catch (AppException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            log.error("Error resetting password: {}", e.getMessage(), e);
+//            throw new AppException(ErrorCode.INTERNAL_ERROR, "Password reset failed", e);
+//        }
+//    }
 
     // Verify Token
     public boolean verifyToken(String token) {
@@ -203,4 +263,5 @@ public class AuthService {
 
         return request.getRemoteAddr();
     }
+
 }

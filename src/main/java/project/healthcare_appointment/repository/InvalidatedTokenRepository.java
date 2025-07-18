@@ -27,4 +27,10 @@ public interface InvalidatedTokenRepository extends JpaRepository<InvalidatedTok
 
     @Query("SELECT COUNT(t) FROM InvalidatedToken t WHERE t.expiresAt > :now")
     long countActiveBlacklistedTokens(@Param("now") LocalDateTime now);
+
+    @Query("SELECT i FROM InvalidatedToken i WHERE i.userId = :userId AND i.expiresAt > :now")
+    List<InvalidatedToken> findActiveTokensByUserId(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
+
+    @Query("SELECT COUNT(i) FROM InvalidatedToken i WHERE i.userId = :userId AND i.expiresAt > :now")
+    long countActiveTokensByUserId(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
 }

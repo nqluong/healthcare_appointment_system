@@ -76,11 +76,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "User logout", description = "Logout user and blacklist current token",
-    security = @SecurityRequirement(name = "bearer-jwt"))
-    public ResponseEntity<LogoutResponse> logout(@RequestBody LogoutRequest request,
+        security = @SecurityRequirement(name = "bearer-jwt"))
+    public ResponseEntity<LogoutResponse> logout(Authentication authentication,
                                                       HttpServletRequest httpRequest) {
         try {
-            authService.logout(request.getToken(), httpRequest);
+            authService.logout(authentication, httpRequest);
             return ResponseEntity.ok(LogoutResponse.builder()
                     .message("Logged out successfully")
                     .success(true)
@@ -95,11 +95,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout-all")
-    @Operation(summary = "Logout all devices", description = "Logout user from all devices")
-    public ResponseEntity<LogoutResponse> logoutAllDevices(@RequestBody LogoutRequest request,
-                                                                HttpServletRequest httpRequest) {
+    @Operation(summary = "Logout all devices", description = "Logout user from all devices",
+            security = @SecurityRequirement(name = "bearer-jwt"))
+    public ResponseEntity<LogoutResponse> logoutAllDevices(Authentication authentication,
+                                                           HttpServletRequest httpRequest) {
         try {
-            authService.logoutAllDevices(request.getToken(), httpRequest);
+            authService.logoutAllDevices(authentication, httpRequest);
             return ResponseEntity.ok(LogoutResponse.builder()
                     .message("Logged out from all devices successfully")
                     .success(true)
@@ -125,5 +126,33 @@ public class AuthController {
         boolean isValid = authService.verifyToken(request.getToken());
         return ResponseEntity.ok(Map.of("valid", isValid));
     }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password", description = "Change user's password with current password verification",
+        security = @SecurityRequirement(name = "bearer-jwt"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid current password"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<String> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            HttpServletRequest httpRequest,
+            Authentication authentication) {
+        authService.changePassword(request, httpRequest ,authentication);
+        return ResponseEntity.ok("Password changed successfully");
+    }
+
+//    @PostMapping("/forgot-password")
+//    @Operation(summary = "Forgot password", description = "Reset password using email")
+//    @ApiResponses(value = {
+//            @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+//            @ApiResponse(responseCode = "404", description = "User not found")
+//    })
+//    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
+//                                                 HttpServletRequest httpRequest) {
+//        authService.forgotPassword(request, httpRequest);
+//        return ResponseEntity.ok("Password reset successfully");
+//    }
 
 }

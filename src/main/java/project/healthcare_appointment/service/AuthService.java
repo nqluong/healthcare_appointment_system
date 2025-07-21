@@ -6,27 +6,22 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import project.healthcare_appointment.dto.request.auth_request.*;
-import project.healthcare_appointment.enums.TokenType;
 import project.healthcare_appointment.exception.*;
 import project.healthcare_appointment.security.JwtUtil;
-import project.healthcare_appointment.dto.response.LoginResponse;
-import project.healthcare_appointment.dto.response.RefreshTokenResponse;
-import project.healthcare_appointment.dto.response.RegisterResponse;
+import project.healthcare_appointment.dto.response.auth_response.LoginResponse;
+import project.healthcare_appointment.dto.response.auth_response.RefreshTokenResponse;
+import project.healthcare_appointment.dto.response.auth_response.RegisterResponse;
 import project.healthcare_appointment.enums.UserRole;
 import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.model.UserProfile;
 import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.repository.UserRepository;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -48,10 +43,9 @@ public class AuthService {
     // Login
     public LoginResponse login(LoginRequest request) {
        try{
-           log.info("Thuc hien truy van ơ auth");
            User user = userRepository.findUserWithoutRelationships(request.getUsername())
                    .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-            log.info("THuc hien truy van thanh cong ơ auth {}", user);
+
            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
                throw new AppException(ErrorCode.INVALID_CREDENTIALS);
            }
@@ -212,7 +206,7 @@ public class AuthService {
             String userAgent = httpRequest.getHeader("User-Agent");
             jwtUtil.blacklistToken(currentToken, userId, "PASSWORD_CHANGE", ipAddress, userAgent);
 
-//            invalidatedTokenService.invalidateAllUserTokens(userId, "PASSWORD_CHANGE");
+
 
             log.info("Password changed successfully for user: {}", username);
         }catch (AppException e) {

@@ -43,8 +43,7 @@ public class JwtUtil {
     @Value("${jwt.refresh.expiration}")
     Long refreshExpiration;
 
-    @Autowired
-    InvalidatedTokenService invalidatedTokenService;
+    private final InvalidatedTokenService invalidatedTokenService;
 
     public String generateToken(User user) {
         try {

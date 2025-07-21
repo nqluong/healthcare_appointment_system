@@ -1,4 +1,4 @@
-package project.healthcare_appointment.dto.response;
+package project.healthcare_appointment.dto.response.auth_response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;

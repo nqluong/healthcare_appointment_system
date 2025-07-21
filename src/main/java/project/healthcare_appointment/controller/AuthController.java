@@ -9,26 +9,28 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import project.healthcare_appointment.dto.request.auth_request.*;
 import project.healthcare_appointment.dto.response.*;
-import project.healthcare_appointment.exception.AppException;
-import project.healthcare_appointment.exception.ErrorCode;
-import project.healthcare_appointment.model.User;
+import project.healthcare_appointment.dto.response.auth_response.LoginResponse;
+import project.healthcare_appointment.dto.response.auth_response.LogoutResponse;
+import project.healthcare_appointment.dto.response.auth_response.RefreshTokenResponse;
+import project.healthcare_appointment.dto.response.auth_response.RegisterResponse;
 import project.healthcare_appointment.service.AuthService;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Authentication and authorization endpoints")
 public class AuthController {
-    @Autowired
-    private AuthService authService;
+
+    private final AuthService authService;
 
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticate user and return JWT tokens")
@@ -78,7 +80,7 @@ public class AuthController {
     @Operation(summary = "User logout", description = "Logout user and blacklist current token",
         security = @SecurityRequirement(name = "bearer-jwt"))
     public ResponseEntity<LogoutResponse> logout(Authentication authentication,
-                                                      HttpServletRequest httpRequest) {
+                                                 HttpServletRequest httpRequest) {
         try {
             authService.logout(authentication, httpRequest);
             return ResponseEntity.ok(LogoutResponse.builder()

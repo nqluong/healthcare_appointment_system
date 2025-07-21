@@ -1,6 +1,6 @@
 package project.healthcare_appointment.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,14 +15,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
     private final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/login",
             "/api/auth/refresh",
@@ -37,14 +38,19 @@ public class SecurityConfig {
             "/webjars/**"
     };
 
-    @Autowired
-    private JwtDecoderCustom jwtDecoderCustom;
+    private final String[] FILE_ACCESS_ENDPOINTS = {
+            "/avatars/**",
+            "/documents/**",
+            "/medical-records/**"
+    };
 
-    @Autowired
-    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    @Autowired
-    private AccessDeniedHandler jwtAccessDeniedHandler;
+    private final JwtDecoderCustom jwtDecoderCustom;
+
+
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    private final AccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {

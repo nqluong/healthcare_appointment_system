@@ -11,8 +11,10 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import project.healthcare_appointment.dto.response.ErrorResponse;
 import project.healthcare_appointment.dto.response.ValidationErrorResponse;
+import project.healthcare_appointment.security.JwtAuthenticationEntryPoint;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -30,6 +32,34 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.of(ex, request.getRequestURI());
         return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(response);
     }
+
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException e) {
+        log.error("File size exceeded maximum limit", e);
+
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.FILE_SIZE_EXCEEDED,
+                "File size exceeded maximum limit"
+        );
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException e) {
+        log.error("Invalid argument provided", e);
+
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.INVALID_ARGUMENT,
+                e.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationException(
             MethodArgumentNotValidException ex, HttpServletRequest request) {

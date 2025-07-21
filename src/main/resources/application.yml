@@ -1,7 +1,13 @@
 server:
   port: 8080
+  username-admin: ${ADMIN_USERNAME}
+  password-admin: ${ADMIN_PASSWORD}
   servlet:
     context-path: /healthcare
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 10MB
 
 spring:
   datasource:
@@ -24,6 +30,10 @@ jwt:
     expiration: 3600 # in seconds
     refresh:
         expiration: 36000
+file:
+  upload:
+    base-path: uploads
+    max-size: 5242880
 #  security:
 #    oauth2:
 #      resourceserver:

@@ -34,4 +34,8 @@ public class ApiResponse<T> {
                 .timestamp(LocalDateTime.now().toString())
                 .build();
     }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return new ApiResponse<>(false, message, null, java.time.LocalDateTime.now().toString());
+    }
 }

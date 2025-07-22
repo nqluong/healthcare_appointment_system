@@ -11,8 +11,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Component;
 import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.repository.UserRepository;
-import project.healthcare_appointment.service.AuthService;
-import project.healthcare_appointment.service.InvalidatedTokenService;
 
 import javax.crypto.spec.SecretKeySpec;
 
@@ -70,7 +68,7 @@ public class JwtDecoderCustom implements JwtDecoder {
             log.error("JWT decoding failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Unexpected error during JWT decoding: {}", e.getMessage(), e);
+            log.error("Unexpected error during JWT decoding: {}", e.getMessage());
             throw new JwtException("Authentication failed: " + e.getMessage());
         }
     }

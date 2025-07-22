@@ -15,8 +15,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import project.healthcare_appointment.dto.request.user_profile_request.UpdateProfileRequest;
@@ -24,7 +22,6 @@ import project.healthcare_appointment.dto.response.FileUploadResponse;
 import project.healthcare_appointment.dto.response.user_profile_response.ProfileResponse;
 import project.healthcare_appointment.exception.AppException;
 import project.healthcare_appointment.exception.ErrorCode;
-import project.healthcare_appointment.security.JwtUtil;
 import project.healthcare_appointment.service.UserProfileService;
 
 import java.util.UUID;
@@ -38,7 +35,6 @@ import java.util.UUID;
 public class UserProfileController {
 
     private final UserProfileService userProfileService;
-    private final JwtUtil jwtUtil;
 
     @GetMapping("/me")
     @Operation(
@@ -47,12 +43,9 @@ public class UserProfileController {
     )
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
     @ApiResponse(responseCode = "404", description = "Profile not found")
-    public ResponseEntity<ProfileResponse> getCurrentUserProfile(
-            @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ProfileResponse> getCurrentUserProfile() {
 
-        UUID userId = jwtUtil.getUserIdFromJwt(jwt);
-        ProfileResponse profile = userProfileService.getProfile(userId);
-
+        ProfileResponse profile = userProfileService.getCurrentUserProfile();
         return ResponseEntity.ok(profile);
     }
 
@@ -65,15 +58,7 @@ public class UserProfileController {
     @ApiResponse(responseCode = "403", description = "Access denied")
     @ApiResponse(responseCode = "404", description = "Profile not found")
     public ResponseEntity<ProfileResponse> getUserProfile(
-            @Parameter(description = "User ID") @PathVariable UUID userId,
-            @AuthenticationPrincipal Jwt jwt) {
-
-        UUID currentUserId = jwtUtil.getUserIdFromJwt(jwt);
-        String userRole = jwtUtil.getRoleFromJwt(jwt);
-
-        if (!currentUserId.equals(userId) && !"ADMIN".equals(userRole)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED_PROFILE_ACCESS);
-        }
+            @Parameter(description = "User ID") @PathVariable UUID userId) {
 
         ProfileResponse profile = userProfileService.getProfile(userId);
 
@@ -88,10 +73,26 @@ public class UserProfileController {
     @ApiResponse(responseCode = "200", description = "Profile updated successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input data")
     public ResponseEntity<ProfileResponse> updateCurrentUserProfile(
-            @Valid @RequestBody UpdateProfileRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Valid @RequestBody UpdateProfileRequest request
+            ) {
 
-        UUID userId = jwtUtil.getUserIdFromJwt(jwt);
+        ProfileResponse updatedProfile = userProfileService.updateCurrentUserProfile( request);
+
+        return ResponseEntity.ok(updatedProfile);
+    }
+
+    @PutMapping("/{userId}")
+    @Operation(
+            summary = "Update user profile by ID",
+            description = "Update profile information of a specific user (accessible by user themselves or admin)"
+    )
+    @ApiResponse(responseCode = "200", description = "Profile updated successfully")
+    @ApiResponse(responseCode = "403", description = "Access denied")
+    @ApiResponse(responseCode = "400", description = "Invalid input data")
+    public ResponseEntity<ProfileResponse> updateUserProfile(
+            @Parameter(description = "User ID") @PathVariable UUID userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+
         ProfileResponse updatedProfile = userProfileService.updateProfile(userId, request);
 
         return ResponseEntity.ok(updatedProfile);
@@ -106,11 +107,13 @@ public class UserProfileController {
     @ApiResponse(responseCode = "400", description = "Invalid file or file too large")
     public ResponseEntity<FileUploadResponse> uploadAvatar(
             @Parameter(description = "Avatar image file")
-            @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Jwt jwt) {
+            @RequestParam("file") MultipartFile file) {
 
-        UUID userId = jwtUtil.getUserIdFromJwt(jwt);
-        FileUploadResponse uploadResponse = userProfileService.uploadAvatar(userId, file);
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.FILE_NOT_FOUND);
+        }
+
+        FileUploadResponse uploadResponse = userProfileService.uploadCurrentUserAvatar( file);
 
         return ResponseEntity.ok(uploadResponse);
     }

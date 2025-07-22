@@ -21,22 +21,22 @@ public class ProfileResponse {
     @Schema(description = "Profile ID")
     UUID id;
 
-    @Schema(description = "User's first name", example = "John")
+    @Schema(description = "User's first name", example = "Luong")
     String firstName;
 
-    @Schema(description = "User's last name", example = "Doe")
+    @Schema(description = "User's last name", example = "Nguyen")
     String lastName;
 
     @Schema(description = "User's phone number", example = "+1234567890")
     String phone;
 
-    @Schema(description = "User's date of birth", example = "1990-01-15")
+    @Schema(description = "User's date of birth", example = "2004-01-15")
     LocalDate dateOfBirth;
 
     @Schema(description = "User's gender")
     Gender gender;
 
-    @Schema(description = "User's address", example = "123 Main St, City, State")
+    @Schema(description = "User's address", example = "Ha Noi, Vietnam")
     String address;
 
     @Schema(description = "Avatar URL")

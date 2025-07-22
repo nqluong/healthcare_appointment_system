@@ -20,12 +20,12 @@ import java.time.LocalDate;
 public class UpdateProfileRequest {
     @NotBlank(message = "First name is required")
     @Size(max = 100, message = "First name must not exceed 100 characters")
-    @Schema(description = "User's first name", example = "John", required = true)
+    @Schema(description = "User's first name", example = "Luong", required = true)
     String firstName;
 
     @NotBlank(message = "Last name is required")
     @Size(max = 100, message = "Last name must not exceed 100 characters")
-    @Schema(description = "User's last name", example = "Doe", required = true)
+    @Schema(description = "User's last name", example = "Nguyen", required = true)
     String lastName;
 
     @Pattern(regexp = "^[+]?[0-9\\-\\s]{10,15}$", message = "Invalid phone number format")
@@ -33,13 +33,13 @@ public class UpdateProfileRequest {
     String phone;
 
     @Past(message = "Date of birth must be in the past")
-    @Schema(description = "User's date of birth", example = "1990-01-15")
+    @Schema(description = "User's date of birth", example = "2004-01-15")
     LocalDate dateOfBirth;
 
     @Schema(description = "User's gender")
     Gender gender;
 
     @Size(max = 500, message = "Address must not exceed 500 characters")
-    @Schema(description = "User's address", example = "123 Main St, City, State")
+    @Schema(description = "User's address", example = "Ha Noi, Vietnam")
     String address;
 }

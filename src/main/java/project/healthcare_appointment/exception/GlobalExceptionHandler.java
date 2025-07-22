@@ -7,11 +7,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import project.healthcare_appointment.dto.response.ErrorResponse;
 import project.healthcare_appointment.dto.response.ValidationErrorResponse;
 import project.healthcare_appointment.security.JwtAuthenticationEntryPoint;
@@ -109,6 +113,43 @@ public class GlobalExceptionHandler {
 
         ErrorResponse response = ErrorResponse.of(errorCode, message, request.getRequestURI());
         return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        log.error("Method argument type mismatch: {}", ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.INVALID_ARGUMENT,
+                "Invalid argument type for parameter: " + ex.getName(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(
+            HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        log.error("Unsupported media type: {}", ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.INVALID_FILE_TYPE,
+                "Unsupported media type: " + ex.getContentType(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestPartException(){
+        log.error("Missing required request part");
+
+        ErrorResponse response = ErrorResponse.of(
+                ErrorCode.FILE_NOT_FOUND,
+                "Required request part is missing"
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(Exception.class)

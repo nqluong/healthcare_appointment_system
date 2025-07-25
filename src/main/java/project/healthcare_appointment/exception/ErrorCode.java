@@ -64,7 +64,16 @@ public enum ErrorCode {
 
     PROFILE_NOT_FOUND("PROFILE_001", "User profile not found", HttpStatus.NOT_FOUND),
     PROFILE_UPDATE_FAILED("PROFILE_002", "Failed to update profile",HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED_PROFILE_ACCESS("PROFILE_003", "Unauthorized access to profile", HttpStatus.FORBIDDEN),;
+    UNAUTHORIZED_PROFILE_ACCESS("PROFILE_003", "Unauthorized access to profile", HttpStatus.FORBIDDEN),
+
+    //Specific Errors
+    SPECIALIST_NOT_FOUND("SPEC_001", "Specialist not found", HttpStatus.NOT_FOUND),
+    SPECIALTY_NAME_DUPLICATED("SPEC_002", "Specialty with name already exists", HttpStatus.CONFLICT),
+
+    //Doctor Errors
+    DOCTOR_NOT_FOUND("DOCTOR_001", "Doctor not found", HttpStatus.NOT_FOUND),
+    DOCTOR_LICENSE_DUPLICATED("DOCTOR_002", "Doctor with license number already exists", HttpStatus.CONFLICT),
+    ;
 
     private final String code;
     private final String message;

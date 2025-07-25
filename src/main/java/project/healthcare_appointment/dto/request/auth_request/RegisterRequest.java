@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import project.healthcare_appointment.enums.Gender;
+import project.healthcare_appointment.enums.UserRole;
 
 import java.time.LocalDate;
 
@@ -52,6 +53,9 @@ public class RegisterRequest {
 
     @Schema(description = "Gender", example = "MALE")
     Gender gender;
+
+    @Schema(description = "User role", example = "PATIENT or DOCTOR", required = true)
+    UserRole role;
 
     @Schema(description = "Address", example = "Hanoi, Vietnam")
     String address;

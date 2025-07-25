@@ -1,4 +1,4 @@
-package project.healthcare_appointment.service;
+package project.healthcare_appointment.service.auth_service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -21,6 +21,7 @@ import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.model.UserProfile;
 import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.repository.UserRepository;
+import project.healthcare_appointment.service.InvalidatedTokenService;
 
 import java.util.UUID;
 
@@ -95,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
                     .username(request.getUsername())
                     .email(request.getEmail())
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
-                    .role(UserRole.PATIENT)
+                    .role(request.getRole())
                     .isActive(true)
                     .isEmailVerified(false)
                     .build();

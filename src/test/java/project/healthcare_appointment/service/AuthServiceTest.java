@@ -21,6 +21,7 @@ import project.healthcare_appointment.model.UserProfile;
 import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.repository.UserRepository;
 import project.healthcare_appointment.security.JwtUtil;
+import project.healthcare_appointment.service.auth_service.AuthService;
 
 import java.time.LocalDate;
 import java.util.Optional;

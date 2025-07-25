@@ -1,4 +1,4 @@
-package project.healthcare_appointment.service;
+package project.healthcare_appointment.service.user_service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

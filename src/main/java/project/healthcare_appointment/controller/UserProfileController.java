@@ -22,7 +22,7 @@ import project.healthcare_appointment.dto.response.FileUploadResponse;
 import project.healthcare_appointment.dto.response.user_profile_response.ProfileResponse;
 import project.healthcare_appointment.exception.AppException;
 import project.healthcare_appointment.exception.ErrorCode;
-import project.healthcare_appointment.service.UserProfileService;
+import project.healthcare_appointment.service.user_service.UserProfileService;
 
 import java.util.UUID;
 
@@ -39,8 +39,8 @@ public class UserProfileController {
     @GetMapping("/me")
     @Operation(
             summary = "Get current user profile",
-            description = "Retrieve the profile information of the currently authenticated user"
-    )
+            description = "Retrieve the profile information of the currently authenticated user",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
     @ApiResponse(responseCode = "404", description = "Profile not found")
     public ResponseEntity<ProfileResponse> getCurrentUserProfile() {
@@ -52,8 +52,8 @@ public class UserProfileController {
     @GetMapping("/{userId}")
     @Operation(
             summary = "Get user profile by ID",
-            description = "Retrieve profile information of a specific user (Admin only or own profile)"
-    )
+            description = "Retrieve profile information of a specific user (Admin only or own profile)",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
     @ApiResponse(responseCode = "403", description = "Access denied")
     @ApiResponse(responseCode = "404", description = "Profile not found")
@@ -68,8 +68,8 @@ public class UserProfileController {
     @PutMapping("/me")
     @Operation(
             summary = "Update current user profile",
-            description = "Update the profile information of the currently authenticated user"
-    )
+            description = "Update the profile information of the currently authenticated user",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Profile updated successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input data")
     public ResponseEntity<ProfileResponse> updateCurrentUserProfile(
@@ -84,8 +84,8 @@ public class UserProfileController {
     @PutMapping("/{userId}")
     @Operation(
             summary = "Update user profile by ID",
-            description = "Update profile information of a specific user (accessible by user themselves or admin)"
-    )
+            description = "Update profile information of a specific user (accessible by user themselves or admin)",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Profile updated successfully")
     @ApiResponse(responseCode = "403", description = "Access denied")
     @ApiResponse(responseCode = "400", description = "Invalid input data")
@@ -101,8 +101,8 @@ public class UserProfileController {
     @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Upload user avatar",
-            description = "Upload an avatar image for the currently authenticated user"
-    )
+            description = "Upload an avatar image for the currently authenticated user",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Avatar uploaded successfully")
     @ApiResponse(responseCode = "400", description = "Invalid file or file too large")
     public ResponseEntity<FileUploadResponse> uploadAvatar(
@@ -122,8 +122,8 @@ public class UserProfileController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Get all user profiles (Admin only)",
-            description = "Retrieve paginated list of all user profiles - Admin access required"
-    )
+            description = "Retrieve paginated list of all user profiles - Admin access required",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Users retrieved successfully")
     @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     public ResponseEntity<Page<ProfileResponse>> getAllUsers(
@@ -144,8 +144,8 @@ public class UserProfileController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "Search user profiles (Admin only)",
-            description = "Search user profiles by keyword - Admin access required"
-    )
+            description = "Search user profiles by keyword - Admin access required",
+            security = @SecurityRequirement(name = "bearer-jwt"))
     @ApiResponse(responseCode = "200", description = "Search completed successfully")
     @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     public ResponseEntity<Page<ProfileResponse>> searchUsers(

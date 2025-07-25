@@ -37,7 +37,7 @@ public class JwtDecoderCustom implements JwtDecoder {
             var response = jwtUtil.verifyToken(token);
 
             if(!response) {
-                throw new JwtException("Token verification failed " );
+                throw new JwtException("Token verification failed ");
             }
 
             if (nimbusJwtDecoder == null) {
@@ -65,11 +65,11 @@ public class JwtDecoderCustom implements JwtDecoder {
             return jwt;
 
         } catch (JwtException e) {
-            log.error("JWT decoding failed: {}", e.getMessage());
-            throw e;
+           // log.error("JWT decoding failed: {}", e.getMessage());
+            throw new JwtException("Authentication failed");
         } catch (Exception e) {
-            log.error("Unexpected error during JWT decoding: {}", e.getMessage());
-            throw new JwtException("Authentication failed: " + e.getMessage());
+            //.error("Unexpected error during JWT decoding: {}", e.getMessage());
+            throw new JwtException("Authentication failed: ");
         }
     }
 }

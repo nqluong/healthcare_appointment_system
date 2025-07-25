@@ -20,7 +20,7 @@ import project.healthcare_appointment.dto.response.auth_response.LoginResponse;
 import project.healthcare_appointment.dto.response.auth_response.LogoutResponse;
 import project.healthcare_appointment.dto.response.auth_response.RefreshTokenResponse;
 import project.healthcare_appointment.dto.response.auth_response.RegisterResponse;
-import project.healthcare_appointment.service.AuthService;
+import project.healthcare_appointment.service.auth_service.AuthService;
 
 import java.util.Map;
 

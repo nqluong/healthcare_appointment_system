@@ -1,4 +1,4 @@
-package project.healthcare_appointment.service;
+package project.healthcare_appointment.service.auth_service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.Authentication;
@@ -9,7 +9,6 @@ import project.healthcare_appointment.dto.request.auth_request.RegisterRequest;
 import project.healthcare_appointment.dto.response.auth_response.LoginResponse;
 import project.healthcare_appointment.dto.response.auth_response.RefreshTokenResponse;
 import project.healthcare_appointment.dto.response.auth_response.RegisterResponse;
-import project.healthcare_appointment.exception.AppException;
 
 public interface AuthService {
 

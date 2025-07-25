@@ -1,4 +1,4 @@
-package project.healthcare_appointment.service;
+package project.healthcare_appointment.service.user_service;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +22,7 @@ import project.healthcare_appointment.mapper.UserProfileMapper;
 import project.healthcare_appointment.model.UserProfile;
 import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.security.JwtUtil;
+import project.healthcare_appointment.service.FileUploadService;
 
 import java.util.UUID;
 

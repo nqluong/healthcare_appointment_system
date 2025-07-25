@@ -1,17 +1,15 @@
 package project.healthcare_appointment.exception;
 
 import lombok.*;
-import lombok.experimental.FieldDefaults;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
 public class AppException extends RuntimeException {
+
     private final ErrorCode errorCode;
     private Object data;
+
     public AppException(ErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;

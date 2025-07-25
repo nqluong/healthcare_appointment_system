@@ -24,7 +24,7 @@ import project.healthcare_appointment.dto.request.user_profile_request.UpdatePro
 import project.healthcare_appointment.dto.response.FileUploadResponse;
 import project.healthcare_appointment.dto.response.user_profile_response.ProfileResponse;
 import project.healthcare_appointment.enums.Gender;
-import project.healthcare_appointment.service.UserProfileService;
+import project.healthcare_appointment.service.user_service.UserProfileService;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

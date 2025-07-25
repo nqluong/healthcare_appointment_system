@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.healthcare_appointment.dto.request.doctor_request.CreateDoctorRequest;
 import project.healthcare_appointment.dto.request.doctor_request.UpdateDoctorRequest;
+import project.healthcare_appointment.dto.response.PageResponse;
 import project.healthcare_appointment.dto.response.doctor_response.DoctorResponse;
 import project.healthcare_appointment.exception.AppException;
 import project.healthcare_appointment.exception.ErrorCode;
@@ -76,12 +77,12 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
-    public Page<DoctorResponse> getAllDoctors(String name, UUID specialtyId, Boolean approved, Pageable pageable) {
+    public PageResponse<DoctorResponse> getAllDoctors(String name, UUID specialtyId, Boolean approved, Pageable pageable) {
 
         log.info("Fetching doctors with filters - name: {}, specialtyId: {}, approved: {}", name, specialtyId, approved);
 
         Page<Doctor> doctors = doctorRepository.findDoctorsWithFilters(name, specialtyId, approved, pageable);
-        return doctorMapper.toResponseDtoPage(doctors);
+        return doctorMapper.toResponsePage(doctors);
     }
 
     @Override
@@ -128,20 +129,20 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<DoctorResponse> getDoctorsByApprovalStatus(Boolean approved, Pageable pageable) {
+    public PageResponse<DoctorResponse> getDoctorsByApprovalStatus(Boolean approved, Pageable pageable) {
         log.info("Fetching doctors by approval status: {}", approved);
 
         Page<Doctor> doctors = doctorRepository.findByIsApproved(approved, pageable);
-        return doctorMapper.toResponseDtoPage(doctors);
+        return doctorMapper.toResponsePage(doctors);
     }
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or hasRole('PATIENT')")
-    public Page<DoctorResponse> getDoctorsBySpecialty(UUID specialtyId, Pageable pageable) {
+    public PageResponse<DoctorResponse> getDoctorsBySpecialty(UUID specialtyId, Pageable pageable) {
         log.info("Fetching doctors by specialty ID: {}", specialtyId);
 
         Page<Doctor> doctors = doctorRepository.findBySpecialtyId(specialtyId, pageable);
-        return doctorMapper.toResponseDtoPage(doctors);
+        return doctorMapper.toResponsePage(doctors);
     }
 
 }

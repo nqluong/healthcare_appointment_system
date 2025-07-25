@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import project.healthcare_appointment.dto.request.doctor_request.CreateDoctorRequest;
 import project.healthcare_appointment.dto.request.doctor_request.UpdateDoctorRequest;
+import project.healthcare_appointment.dto.response.PageResponse;
 import project.healthcare_appointment.dto.response.doctor_response.DoctorResponse;
 
 import java.util.UUID;
@@ -20,14 +21,14 @@ public interface DoctorService {
 
     DoctorResponse getDoctorById(UUID id);
 
-    Page<DoctorResponse> getAllDoctors(String name, UUID specialtyId, Boolean approved, Pageable pageable);
+    PageResponse<DoctorResponse> getAllDoctors(String name, UUID specialtyId, Boolean approved, Pageable pageable);
 
     DoctorResponse updateDoctor(UUID id, UpdateDoctorRequest requestDto);
 
     void deleteDoctor(UUID id);
 
-    Page<DoctorResponse> getDoctorsBySpecialty(UUID specialtyId, Pageable pageable);
+    PageResponse<DoctorResponse> getDoctorsBySpecialty(UUID specialtyId, Pageable pageable);
 
-    Page<DoctorResponse> getDoctorsByApprovalStatus(Boolean approved, Pageable pageable);
+    PageResponse<DoctorResponse> getDoctorsByApprovalStatus(Boolean approved, Pageable pageable);
 
 }

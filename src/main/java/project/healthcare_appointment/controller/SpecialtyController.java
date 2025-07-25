@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.healthcare_appointment.dto.request.specialty_request.CreateSpecialtyRequest;
 import project.healthcare_appointment.dto.request.specialty_request.UpdateSpecialtyRequest;
+import project.healthcare_appointment.dto.response.PageResponse;
 import project.healthcare_appointment.dto.response.specialty_response.SpecialtyResponse;
 import project.healthcare_appointment.service.specialty_service.SpecialtyService;
 
@@ -68,7 +69,7 @@ public class SpecialtyController {
             @ApiResponse(responseCode = "200", description = "Specialties retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    public ResponseEntity<Page<SpecialtyResponse>> getAllSpecialties(
+    public ResponseEntity<PageResponse<SpecialtyResponse>> getAllSpecialties(
             @Parameter(description = "Filter by specialty name") @RequestParam(required = false) String name,
             @Parameter(description = "Filter by active status") @RequestParam(required = false) Boolean active,
             @Parameter(description = "Page number (0-based index)", example = "0")
@@ -78,7 +79,7 @@ public class SpecialtyController {
 
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<SpecialtyResponse> response = specialtyService.getAllSpecialties(name, active, pageable);
+        PageResponse<SpecialtyResponse> response = specialtyService.getAllSpecialties(name, active, pageable);
 
         return ResponseEntity.ok(response);
     }
@@ -122,13 +123,13 @@ public class SpecialtyController {
             @ApiResponse(responseCode = "200", description = "Active specialties retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    public ResponseEntity<Page<SpecialtyResponse>> getActiveSpecialties(
+    public ResponseEntity<PageResponse<SpecialtyResponse>> getActiveSpecialties(
             @Parameter(description = "Page number (0-based index)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<SpecialtyResponse> response = specialtyService.getActiveSpecialties(pageable);
+        PageResponse<SpecialtyResponse> response = specialtyService.getActiveSpecialties(pageable);
         return ResponseEntity.ok(response);
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.healthcare_appointment.dto.request.specialty_request.CreateSpecialtyRequest;
 import project.healthcare_appointment.dto.request.specialty_request.UpdateSpecialtyRequest;
+import project.healthcare_appointment.dto.response.PageResponse;
 import project.healthcare_appointment.dto.response.specialty_response.SpecialtyResponse;
 import project.healthcare_appointment.exception.AppException;
 import project.healthcare_appointment.exception.ErrorCode;
@@ -61,7 +62,7 @@ public class SpecialtyServiceImpl implements SpecialtyService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
-    public Page<SpecialtyResponse> getAllSpecialties(String name, Boolean active, Pageable pageable) {
+    public PageResponse<SpecialtyResponse> getAllSpecialties(String name, Boolean active, Pageable pageable) {
         log.info("Fetching specialties with filters - name: {}, active: {}", name, active);
         Page<Specialty> specialties;
 
@@ -119,7 +120,7 @@ public class SpecialtyServiceImpl implements SpecialtyService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
-    public Page<SpecialtyResponse> getActiveSpecialties(Pageable pageable) {
+    public PageResponse<SpecialtyResponse> getActiveSpecialties(Pageable pageable) {
         log.info("Fetching active specialties");
 
         Page<Specialty> specialties = specialtyRepository.findByIsActive(true, pageable);

@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import project.healthcare_appointment.dto.request.doctor_request.CreateDoctorRequest;
 import project.healthcare_appointment.dto.request.doctor_request.UpdateDoctorRequest;
+import project.healthcare_appointment.dto.response.PageResponse;
 import project.healthcare_appointment.dto.response.doctor_response.DoctorResponse;
 import project.healthcare_appointment.service.doctor_service.DoctorService;
 
@@ -66,7 +67,7 @@ public class DoctorController {
             @ApiResponse(responseCode = "200", description = "Doctors retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    public ResponseEntity<Page<DoctorResponse>> getAllDoctors(
+    public ResponseEntity<PageResponse<DoctorResponse>> getAllDoctors(
             @Parameter(description = "Filter by doctor name") @RequestParam(required = false) String name,
             @Parameter(description = "Filter by specialty ID") @RequestParam(required = false) UUID specialtyId,
             @Parameter(description = "Filter by approval status") @RequestParam(required = false) Boolean approved,
@@ -75,7 +76,7 @@ public class DoctorController {
             @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DoctorResponse> response = doctorService.getAllDoctors(name, specialtyId, approved, pageable);
+        PageResponse<DoctorResponse> response = doctorService.getAllDoctors(name, specialtyId, approved, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -117,14 +118,14 @@ public class DoctorController {
             @ApiResponse(responseCode = "200", description = "Doctors retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     })
-    public ResponseEntity<Page<DoctorResponse>> getDoctorsByApprovalStatus(
+    public ResponseEntity<PageResponse<DoctorResponse>> getDoctorsByApprovalStatus(
             @Parameter(description = "Approval status") @PathVariable Boolean approved,
             @Parameter(description = "Page number (0-based index)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DoctorResponse> response = doctorService.getDoctorsByApprovalStatus(approved, pageable);
+        PageResponse<DoctorResponse> response = doctorService.getDoctorsByApprovalStatus(approved, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -135,14 +136,14 @@ public class DoctorController {
             @ApiResponse(responseCode = "200", description = "Doctors retrieved successfully"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    public ResponseEntity<Page<DoctorResponse>> getDoctorsBySpecialty(
+    public ResponseEntity<PageResponse<DoctorResponse>> getDoctorsBySpecialty(
             @Parameter(description = "Specialty ID") @PathVariable UUID specialtyId,
             @Parameter(description = "Page number (0-based index)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DoctorResponse> response = doctorService.getDoctorsBySpecialty(specialtyId, pageable);
+        PageResponse<DoctorResponse> response = doctorService.getDoctorsBySpecialty(specialtyId, pageable);
         return ResponseEntity.ok(response);
     }
 }

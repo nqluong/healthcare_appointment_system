@@ -14,7 +14,6 @@ import project.healthcare_appointment.enums.UserRole;
 import project.healthcare_appointment.model.User;
 import project.healthcare_appointment.repository.UserRepository;
 
-import java.time.LocalDateTime;
 
 @Configuration
 @RequiredArgsConstructor

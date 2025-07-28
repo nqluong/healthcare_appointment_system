@@ -36,6 +36,9 @@ public enum ErrorCode {
     REQUIRED_FIELD_MISSING("VAL002", "Required field is missing", HttpStatus.BAD_REQUEST),
     INVALID_FORMAT("VAL003", "Invalid format", HttpStatus.BAD_REQUEST),
     PASSWORD_TOO_WEAK("VAL004", "Password is too weak", HttpStatus.BAD_REQUEST),
+    // Time Validation
+    INVALID_DATE_RANGE("VAL007", "Start date must be before or equal to end date", HttpStatus.BAD_REQUEST),
+    INVALID_TIME_RANGE("VAL006", "Start time must be before end time", HttpStatus.BAD_REQUEST),
 
     // Access Control Errors
     ACCESS_DENIED("ACC001", "Access denied", HttpStatus.FORBIDDEN),
@@ -73,6 +76,17 @@ public enum ErrorCode {
     //Doctor Errors
     DOCTOR_NOT_FOUND("DOCTOR_001", "Doctor not found", HttpStatus.NOT_FOUND),
     DOCTOR_LICENSE_DUPLICATED("DOCTOR_002", "Doctor with license number already exists", HttpStatus.CONFLICT),
+
+    //Schedule Errors
+    SLOT_NOT_FOUND("SLOT_001", "Available slot not found", HttpStatus.NOT_FOUND),
+    DOCTOR_SCHEDULE_NOT_FOUND("SLOT_002", "No active schedules found for doctor", HttpStatus.NOT_FOUND),
+    SLOT_ALREADY_EXISTS("SLOT_003", "Slot already exists for this date and time", HttpStatus.CONFLICT),
+    SLOT_BOOKED_CANNOT_DELETE("SLOT_004", "Cannot delete slot that has been booked", HttpStatus.BAD_REQUEST),
+    SLOT_DOES_NOT_BELONG_TO_DOCTOR("SLOT_005", "Slot does not belong to this doctor", HttpStatus.BAD_REQUEST),
+    SCHEDULE_ALREADY_EXISTS("SLOT_006", "Schedule already exists for this day of week", HttpStatus.CONFLICT),
+    SCHEDULE_NOT_FOUND("SLOT_007", "Schedule not found for this doctor", HttpStatus.NOT_FOUND),
+    SCHEDULE_NOT_ACTIVE("SLOT_008", "Schedule is not active", HttpStatus.BAD_REQUEST),
+    SCHEDULE_NOT_OWNED("SLOT_009", "Schedule does not belong to this doctor", HttpStatus.BAD_REQUEST),
     ;
 
     private final String code;

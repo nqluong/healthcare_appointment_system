@@ -175,6 +175,16 @@ public class JwtUtil {
         }
     }
 
+    public String getEmailFromToken(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getStringClaim("email");
+        } catch (ParseException e) {
+            log.error("Error parsing token to get email", e);
+            throw new AppException(ErrorCode.TOKEN_PARSE_ERROR, e);
+        }
+    }
+
     public String getUsernameFromJwt(Jwt jwt) {
         return jwt.getSubject();
     }
@@ -184,17 +194,14 @@ public class JwtUtil {
         return UUID.fromString(userIdStr);
     }
 
-    public String getRoleFromJwt(Jwt jwt) {
-        return jwt.getClaimAsString("role");
-    }
-
     public String getEmailFromJwt(Jwt jwt) {
         return jwt.getClaimAsString("email");
     }
 
-    public Boolean getIsActiveFromJwt(Jwt jwt) {
-        return jwt.getClaimAsBoolean("isActive");
+    public String getRoleFromJwt(Jwt jwt) {
+        return jwt.getClaimAsString("role");
     }
+
 
 
     public void blacklistToken(String token, UUID userId, String reason, String ipAddress, String userAgent) {

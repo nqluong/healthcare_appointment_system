@@ -23,7 +23,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table(name = "user_profiles")
 @ToString(onlyExplicitlyIncluded = true)
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+//@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserProfile {
     
@@ -67,7 +67,6 @@ public class UserProfile {
     
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    @JsonIgnoreProperties({"userProfile", "doctor", "patient", "notifications", "passwordResetTokens", "auditLogs", "hibernateLazyInitializer", "handler"})
+   // @JsonIgnoreProperties({"userProfile", "doctor", "patient", "notifications", "passwordResetTokens", "auditLogs", "hibernateLazyInitializer", "handler"})
     User user;
-
 }

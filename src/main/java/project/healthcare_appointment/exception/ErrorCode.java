@@ -87,6 +87,18 @@ public enum ErrorCode {
     SCHEDULE_NOT_FOUND("SLOT_007", "Schedule not found for this doctor", HttpStatus.NOT_FOUND),
     SCHEDULE_NOT_ACTIVE("SLOT_008", "Schedule is not active", HttpStatus.BAD_REQUEST),
     SCHEDULE_NOT_OWNED("SLOT_009", "Schedule does not belong to this doctor", HttpStatus.BAD_REQUEST),
+    SLOT_NOT_AVAILABLE("SLOT_010", "Slot is not available for booking", HttpStatus.BAD_REQUEST),
+    SLOT_EXPIRED("SLOT_011", "Slot has expired and cannot be booked", HttpStatus.BAD_REQUEST),
+
+    DUPLICATE_APPOINTMENT("APPT_001", "Patient already has an appointment at this time", HttpStatus.CONFLICT),
+    PATIENT_NOT_FOUND("PATIENT_001", "Patient not found", HttpStatus.NOT_FOUND),
+
+    // Appointment cancellation errors
+    APPOINTMENT_NOT_FOUND("APPT_002", "Appointment not found", HttpStatus.NOT_FOUND),
+    APPOINTMENT_NOT_CANCELLABLE("APPT_003", "Appointment cannot be cancelled", HttpStatus.BAD_REQUEST),
+    CANCELLATION_TOO_LATE("APPT_004", "Cannot cancel appointment less than 1 day before appointment date", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_ALREADY_CANCELLED("APPT_005", "Appointment is already cancelled", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_ALREADY_COMPLETED("APPT_006", "Cannot cancel completed appointment", HttpStatus.BAD_REQUEST),
     ;
 
     private final String code;

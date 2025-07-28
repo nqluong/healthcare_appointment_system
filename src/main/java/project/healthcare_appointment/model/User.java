@@ -26,7 +26,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table(name = "users")
 @ToString(onlyExplicitlyIncluded = true)
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+//@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
     @Id
@@ -70,7 +70,7 @@ public class User {
 
     // Relationships
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
+   // @JsonIgnoreProperties({"user", "hibernateLazyInitializer", "handler"})
     UserProfile userProfile;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -92,5 +92,4 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     List<AuditLog> auditLogs;
-    
 }

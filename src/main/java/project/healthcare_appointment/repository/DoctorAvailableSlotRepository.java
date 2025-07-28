@@ -12,6 +12,7 @@ import project.healthcare_appointment.model.DoctorAvailableSlot;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -34,4 +35,13 @@ public interface DoctorAvailableSlotRepository extends JpaRepository<DoctorAvail
     void deleteByDoctorIdAndSlotDateAndStartTime(@Param("doctorId") UUID doctorId,
                                                  @Param("slotDate") LocalDate slotDate,
                                                  @Param("startTime") LocalTime startTime);
+
+    @Query("SELECT s FROM DoctorAvailableSlot s WHERE s.id = :slotId AND s.isAvailable = true")
+    Optional<DoctorAvailableSlot> findAvailableSlotById(@Param("slotId") UUID slotId);
+
+    @Query("SELECT s FROM DoctorAvailableSlot s WHERE s.doctor.id = :doctorId " +
+            "AND s.slotDate = :date AND s.startTime = :startTime AND s.isAvailable = true")
+    Optional<DoctorAvailableSlot> findAvailableSlot(@Param("doctorId") UUID doctorId,
+                                                    @Param("date") LocalDate date,
+                                                    @Param("startTime") LocalTime startTime);
 }

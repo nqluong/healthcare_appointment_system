@@ -59,4 +59,23 @@ public class RegisterRequest {
 
     @Schema(description = "Address", example = "Hanoi, Vietnam")
     String address;
+
+    // Patient-specific fields (only required if role is PATIENT)
+    @Schema(description = "Medical history (required for patients)", example = "Bach Mai")
+    String medicalHistory;
+
+    @Schema(description = "Allergies (required for patients)", example = "Khong co")
+    String allergies;
+
+    @Schema(description = "Blood type", example = "A+")
+    @Size(max = 5, message = "Blood type must not exceed 5 characters")
+    String bloodType;
+
+    @Schema(description = "Emergency contact name", example = "Nugyen")
+    @Size(max = 100, message = "Emergency contact name must not exceed 100 characters")
+    String emergencyContactName;
+
+    @Schema(description = "Emergency contact phone", example = "0987654321")
+    @Size(max = 20, message = "Emergency contact phone must not exceed 20 characters")
+    String emergencyContactPhone;
 }

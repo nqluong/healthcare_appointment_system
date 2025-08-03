@@ -12,6 +12,10 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import project.healthcare_appointment.dto.request.auth_request.*;
 import project.healthcare_appointment.exception.*;
+import project.healthcare_appointment.model.Doctor;
+import project.healthcare_appointment.model.Patient;
+import project.healthcare_appointment.repository.DoctorRepository;
+import project.healthcare_appointment.repository.PatientRepository;
 import project.healthcare_appointment.security.JwtUtil;
 import project.healthcare_appointment.dto.response.auth_response.LoginResponse;
 import project.healthcare_appointment.dto.response.auth_response.RefreshTokenResponse;
@@ -23,6 +27,7 @@ import project.healthcare_appointment.repository.UserProfileRepository;
 import project.healthcare_appointment.repository.UserRepository;
 import project.healthcare_appointment.service.InvalidatedTokenService;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -38,6 +43,10 @@ public class AuthServiceImpl implements AuthService {
     PasswordEncoder passwordEncoder;
 
     InvalidatedTokenService invalidatedTokenService;
+
+    DoctorRepository doctorRepository;
+
+    PatientRepository patientRepository;
 
     JwtUtil jwtUtil;
 
@@ -62,16 +71,28 @@ public class AuthServiceImpl implements AuthService {
            String accessToken = jwtUtil.generateToken(user);
            String refreshToken = jwtUtil.generateRefreshToken(user);
 
-           return LoginResponse.builder()
+           LoginResponse.LoginResponseBuilder loginResponse = LoginResponse.builder()
                    .accessToken(accessToken)
                    .refreshToken(refreshToken)
                    .userId(user.getId())
                    .email(user.getEmail())
                    .username(user.getUsername())
                    .role(user.getRole().name())
-//                   .firstName(user.getUserProfile() != null ? user.getUserProfile().getFirstName() : "")
-//                   .lastName(user.getUserProfile() != null ? user.getUserProfile().getLastName() : "")
-                   .build();
+                   .firstName(user.getUserProfile() != null ? user.getUserProfile().getFirstName() : "")
+                   .lastName(user.getUserProfile() != null ? user.getUserProfile().getLastName() : "");
+
+           switch (user.getRole().toString()) {
+               case "DOCTOR" -> {
+                   doctorRepository.findByUserId(user.getId())
+                           .ifPresent(doctor -> loginResponse.doctorId(doctor.getId()));
+               }
+               case "PATIENT" -> {
+                   patientRepository.findByUserId(user.getId())
+                           .ifPresent(patient -> loginResponse.patientId(patient.getId()));
+               }
+           }
+           return loginResponse.build();
+
        }catch  (AppException e) {
             throw e;
         } catch (Exception e) {
@@ -98,7 +119,7 @@ public class AuthServiceImpl implements AuthService {
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
                     .role(request.getRole())
                     .isActive(true)
-                    .isEmailVerified(false)
+                    .isEmailVerified(true)
                     .build();
 
             User savedUser = userRepository.save(user);
@@ -113,10 +134,28 @@ public class AuthServiceImpl implements AuthService {
                     .user(savedUser)
                     .build();
 
+            if (request.getRole() == UserRole.PATIENT) {
+                Patient patient = Patient.builder()
+                        .user(savedUser)
+                        .medicalHistory(request.getMedicalHistory())
+                        .allergies(request.getAllergies())
+                        .bloodType(request.getBloodType())
+                        .emergencyContactName(request.getEmergencyContactName())
+                        .emergencyContactPhone(request.getEmergencyContactPhone())
+                        .build();
+
+                patientRepository.save(patient);
+                log.info("Patient record created for user: {}", savedUser.getUsername());
+            }
+
             userProfileRepository.save(profile);
 
             log.info("User {} registered successfully", savedUser.getUsername());
-            return new RegisterResponse("User registered successfully", savedUser.getId());
+            return RegisterResponse.builder()
+                    .message("User registered successfully")
+                    .uuid(savedUser.getId())
+                    .build();
+
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {

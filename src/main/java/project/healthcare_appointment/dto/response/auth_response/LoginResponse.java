@@ -27,6 +27,12 @@ public class LoginResponse {
     @Schema(description = "User ID", example = "123e4567-e89b-12d3-a456-426614174000")
     UUID userId;
 
+    @Schema(description = "Doctor ID (if role is DOCTOR)", example = "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
+    UUID doctorId;
+
+    @Schema(description = "Patient ID (if role is PATIENT)", example = "6f5e4d3c-2b1a-0d9c-8b7a-6e5f4d3c2b1a")
+    UUID patientId;
+
     @Schema(description = "Username", example = "nqluong")
     String username;
 

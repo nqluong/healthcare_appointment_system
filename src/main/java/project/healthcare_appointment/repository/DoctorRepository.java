@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import project.healthcare_appointment.model.Doctor;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,4 +37,9 @@ public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
     boolean existsByLicenseNumber(String licenseNumber);
 
     boolean existsByLicenseNumberAndIdNot(String licenseNumber, UUID id);
+
+    Long countByIsApproved(Boolean isApproved);
+
+    @Query("SELECT s.name, COUNT(d) FROM Doctor d JOIN d.specialty s GROUP BY s.name ORDER BY COUNT(d) DESC")
+    List<Object[]> getDoctorCountBySpecialty();
 }

@@ -35,8 +35,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     Page<Appointment> findByDoctorIdOrderByAppointmentDateDescStartTimeDesc(UUID doctorId, Pageable pageable);
 
-    Page<Appointment> findByStatus(AppointmentStatus status, Pageable pageable);
-
     /**
      * Find appointments within date range
      */
@@ -89,9 +87,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
             @Param("patientName") String patientName,
             Pageable pageable);
 
-    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.status = :status")
-    long countByDoctorIdAndStatus(@Param("doctorId") UUID doctorId, @Param("status") AppointmentStatus status);
+    Long countByStatus(AppointmentStatus status);
 
-    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.id = :patientId AND a.status = :status")
-    long countByPatientIdAndStatus(@Param("patientId") UUID patientId, @Param("status") AppointmentStatus status);
+    @Query("SELECT a.status, COUNT(a) FROM Appointment a GROUP BY a.status ORDER BY COUNT(a) DESC")
+    List<Object[]> getAppointmentCountByStatus();
+
+    Long countByAppointmentDateBetween(LocalDate startDate, LocalDate endDate);
+
+    @Query("SELECT a.status, COUNT(a) FROM Appointment a WHERE a.appointmentDate BETWEEN :startDate AND :endDate GROUP BY a.status ORDER BY COUNT(a) DESC")
+    List<Object[]> getAppointmentCountByStatusAndDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

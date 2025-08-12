@@ -99,6 +99,19 @@ public enum ErrorCode {
     CANCELLATION_TOO_LATE("APPT_004", "Cannot cancel appointment less than 1 day before appointment date", HttpStatus.BAD_REQUEST),
     APPOINTMENT_ALREADY_CANCELLED("APPT_005", "Appointment is already cancelled", HttpStatus.BAD_REQUEST),
     APPOINTMENT_ALREADY_COMPLETED("APPT_006", "Cannot cancel completed appointment", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_NOT_APPROVABLE("APPOINTMENT_007", "Appointment cannot be approved", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_NOT_REJECTABLE("APPOINTMENT_008", "Appointment cannot be rejected", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_EXPIRED("APPOINTMENT_009", "Appointment is in the past", HttpStatus.BAD_REQUEST),
+
+    APPOINTMENT_ALREADY_APPROVED("APPOINTMENT_010", "Appointment is already approved", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_ALREADY_REJECTED("APPOINTMENT_011", "Appointment is already rejected", HttpStatus.BAD_REQUEST),
+    INVALID_APPOINTMENT_STATUS("APPOINTMENT_012", "Invalid appointment status for this operation", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_DATE_INVALID("APPOINTMENT_013", "Appointment date is invalid", HttpStatus.BAD_REQUEST),
+    DOCTOR_SLOT_NOT_FOUND("APPOINTMENT_014", "Doctor available slot not found", HttpStatus.NOT_FOUND),
+    APPOINTMENT_FILTER_INVALID("APPOINTMENT_015", "Invalid filter parameters provided", HttpStatus.BAD_REQUEST),
+    APPOINTMENT_ACCESS_DENIED("APPOINTMENT_016", "Access denied to appointment", HttpStatus.FORBIDDEN),
+    APPOINTMENT_UPDATE_FAILED("APPOINTMENT_017", "Failed to update appointment", HttpStatus.BAD_REQUEST),
+    SLOT_UPDATE_FAILED("APPOINTMENT_018", "Failed to update doctor slot availability", HttpStatus.BAD_REQUEST),;
     ;
 
     private final String code;

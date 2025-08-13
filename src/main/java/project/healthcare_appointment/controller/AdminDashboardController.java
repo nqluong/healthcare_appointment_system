@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import project.healthcare_appointment.dto.response.dashboard_response.BookingStatusStatsDTO;
 import project.healthcare_appointment.dto.response.dashboard_response.DashboardStatsDTO;
 import project.healthcare_appointment.dto.response.dashboard_response.SpecialtyStatsDTO;
+import project.healthcare_appointment.exception.AppException;
+import project.healthcare_appointment.exception.ErrorCode;
 import project.healthcare_appointment.service.dashboard_service.AdminDashboardService;
 
 import java.time.LocalDate;
@@ -38,11 +41,18 @@ public class AdminDashboardController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved dashboard statistics"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
-        DashboardStatsDTO stats = adminDashboardService.getDashboardStats();
-        return ResponseEntity.ok(stats);
+        try {
+            DashboardStatsDTO stats = adminDashboardService.getDashboardStats();
+            return ResponseEntity.ok(stats);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_ERROR.DASHBOARD_DATA_ACCESS_ERROR);
+        }
     }
 
     @GetMapping("/doctors/count")
@@ -53,6 +63,7 @@ public class AdminDashboardController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved doctor count"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<Long> getTotalDoctors() {
@@ -79,6 +90,7 @@ public class AdminDashboardController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved patient count"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<Long> getTotalPatients() {
@@ -92,6 +104,11 @@ public class AdminDashboardController {
             description = "Retrieve the total number of appointments in the system",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved appointment count"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public ResponseEntity<Long> getTotalAppointments() {
         Long totalAppointments = adminDashboardService.getTotalAppointments();
         return ResponseEntity.ok(totalAppointments);
@@ -105,6 +122,7 @@ public class AdminDashboardController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved appointment status statistics"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public ResponseEntity<List<BookingStatusStatsDTO>> getAppointmentsByStatus() {
@@ -118,11 +136,32 @@ public class AdminDashboardController {
             description = "Retrieve appointment status statistics filtered by date range",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved appointment status statistics"),
+            @ApiResponse(responseCode = "400", description = "Invalid date range parameters"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public ResponseEntity<List<BookingStatusStatsDTO>> getAppointmentsByStatusAndDateRange(
-            @Parameter(description = "Start date (YYYY-MM-DD)", example = "2024-01-01")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "End date (YYYY-MM-DD)", example = "2024-12-31")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @Parameter(
+                    description = "Start date (YYYY-MM-DD). Must be before or equal to end date and cannot be in the future.",
+                    example = "2025-08-01",
+                    required = true
+            )
+            @RequestParam
+            @NotNull(message = "Start date is required")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+
+            @Parameter(
+                    description = "End date (YYYY-MM-DD). Must be after or equal to start date and cannot be in the future.",
+                    example = "2025-08-31",
+                    required = true
+            )
+            @RequestParam
+            @NotNull(message = "End date is required")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate) {
         List<BookingStatusStatsDTO> statusStats = adminDashboardService.getAppointmentsByStatusAndDateRange(startDate, endDate);
         return ResponseEntity.ok(statusStats);
     }
@@ -133,6 +172,11 @@ public class AdminDashboardController {
             description = "Retrieve doctor count grouped by specialty",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved specialty statistics"),
+            @ApiResponse(responseCode = "403", description = "Insufficient privileges"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public ResponseEntity<List<SpecialtyStatsDTO>> getSpecialtyStats() {
         List<SpecialtyStatsDTO> specialtyStats = adminDashboardService.getSpecialtyStats();
         return ResponseEntity.ok(specialtyStats);

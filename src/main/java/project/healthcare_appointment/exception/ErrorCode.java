@@ -111,7 +111,21 @@ public enum ErrorCode {
     APPOINTMENT_FILTER_INVALID("APPOINTMENT_015", "Invalid filter parameters provided", HttpStatus.BAD_REQUEST),
     APPOINTMENT_ACCESS_DENIED("APPOINTMENT_016", "Access denied to appointment", HttpStatus.FORBIDDEN),
     APPOINTMENT_UPDATE_FAILED("APPOINTMENT_017", "Failed to update appointment", HttpStatus.BAD_REQUEST),
-    SLOT_UPDATE_FAILED("APPOINTMENT_018", "Failed to update doctor slot availability", HttpStatus.BAD_REQUEST),;
+    SLOT_UPDATE_FAILED("APPOINTMENT_018", "Failed to update doctor slot availability", HttpStatus.BAD_REQUEST),
+    // Data Access Errors
+    DASHBOARD_DATA_ACCESS_ERROR("ADMIN_DASH_001", "Failed to retrieve dashboard data from database", HttpStatus.INTERNAL_SERVER_ERROR),
+    DOCTOR_COUNT_RETRIEVAL_ERROR("ADMIN_DASH_002", "Failed to retrieve doctor count", HttpStatus.INTERNAL_SERVER_ERROR),
+    PATIENT_COUNT_RETRIEVAL_ERROR("ADMIN_DASH_003", "Failed to retrieve patient count", HttpStatus.INTERNAL_SERVER_ERROR),
+    APPOINTMENT_COUNT_RETRIEVAL_ERROR("ADMIN_DASH_004", "Failed to retrieve appointment count",HttpStatus.INTERNAL_SERVER_ERROR),
+    APPOINTMENT_STATUS_STATS_ERROR("ADMIN_DASH_005", "Failed to retrieve appointment status statistics",  HttpStatus.INTERNAL_SERVER_ERROR),
+    SPECIALTY_STATS_ERROR("ADMIN_DASH_006", "Failed to retrieve specialty statistics",HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_RANGE_TOO_LARGE("ADMIN_DASH_008", "Date range is too large. Maximum allowed range is 1 year",    HttpStatus.BAD_REQUEST ),
+    FUTURE_DATE_NOT_ALLOWED("ADMIN_DASH_009", "Future dates are not allowed for statistics",  HttpStatus.BAD_REQUEST),
+    INSUFFICIENT_PRIVILEGES("ADMIN_DASH_010", "Insufficient privileges to access admin dashboard data",HttpStatus.FORBIDDEN),
+    // Data Processing Errors
+    STATISTICS_CALCULATION_ERROR("ADMIN_DASH_011", "Error occurred while calculating statistics", HttpStatus.INTERNAL_SERVER_ERROR),
+    PERCENTAGE_CALCULATION_ERROR("ADMIN_DASH_012", "Error occurred while calculating percentages",  HttpStatus.INTERNAL_SERVER_ERROR )
+
     ;
 
     private final String code;
